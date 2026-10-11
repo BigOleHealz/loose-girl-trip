@@ -6,6 +6,7 @@ import { createClient, configured } from './supabase/client';
 import { fromRows, settingsRow, stopRow, type TripRow, type StopRow } from './cloud-trip';
 import { EMPTY_TRIP, STORAGE_KEY, parseTrip, sortStops, reorderStops } from './trip';
 import type { Stop, Trip } from './types';
+import { readTripFile } from './trip-file';
 
 const ORDER_KEY = `${STORAGE_KEY}:manual-order`;
 const ACTIVE_KEY = 'loose-girl-trip:active-cloud-trip';
@@ -194,8 +195,24 @@ export function useTrip() {
       }
     });
   }
+  async function importTrip(input: Trip) {
+    return mutate(async () => {
+      const source = readTripFile(JSON.stringify(input));
+      if (!user) {
+        // Persist before replacing the visible trip so a storage failure leaves it intact.
+        try { localStorage.setItem(ORDER_KEY, 'true'); localStorage.setItem(STORAGE_KEY, JSON.stringify(source)); }
+        catch { throw new Error('Could not save the import on this device. Your current trip is still open.'); }
+        setStorageBlocked(false); setTrip(source); setManual(true); return;
+      }
+      if (!supabase) throw new Error('Sign in first.');
+      // The existing RPC is atomic and generates fresh trip/stop IDs.
+      const result = await supabase.rpc('create_trip', { input: { ...source, manualOrder: true } });
+      if (result.error || typeof result.data !== 'string') throw new Error('Could not import this trip. Your existing shared trips are unchanged.');
+      await refreshTrips(); await selectTrip(result.data);
+    });
+  }
   return { trip, ready, user, owner, trips, localTrip, manual, saveStatus, error, busy, activeId, storageBlocked,
-    selectTrip, saveSettings, saveStop, deleteStop, createTrip,
+    selectTrip, saveSettings, saveStop, deleteStop, createTrip, importTrip,
     moveStop: (from: string, to: string) => order(reorderStops(trip.stops, from, to), true),
     sortByDate: () => order(sortStops(trip.stops), false),
     clearStorageBlock: () => setStorageBlocked(false), clearError: () => setError(''),

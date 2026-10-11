@@ -6,7 +6,7 @@ export interface WeatherData {
   source: 'climate' | 'forecast'; avgHighF: number; avgLowF: number;
   months: MonthClimate[]; coverage: string; partial: boolean;
 }
-export function weatherTone(weather: Stop['weather'], threshold: number) {
+export function weatherTone(weather: Pick<NonNullable<Stop['weather']>, 'avgLowF'> | undefined, threshold: number) {
   if (!weather) return 'unknown';
   return weather.avgLowF < threshold ? 'cold' : weather.avgLowF < threshold + 5 ? 'borderline' : 'warm';
 }

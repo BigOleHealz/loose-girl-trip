@@ -1,6 +1,6 @@
 # Loose Girl Trip
 
-Phases 0–5 of [the project plan](./loose-girl-trip-plan.md): a full-screen US map, dated stops, shared trips with Supabase accounts and live edits, invitations, and ORS driving routes with mileage by state. Weather warnings, temperature tiles, and gas/lodging budgets are implemented. Phase 6 remains pending.
+Phases 0–6 of [the project plan](./loose-girl-trip-plan.md): a full-screen US map, dated stops, shared trips with Supabase accounts and live edits, invitations, and ORS driving routes with mileage by state. Weather warnings, temperature tiles, and gas/lodging budgets are implemented. The app also includes home-screen installation, a mobile bottom sheet, a monthly timeline, and JSON import/export.
 
 ## Run locally
 
@@ -73,8 +73,22 @@ The installed global Vercel CLI is outdated (33.4.1). Use `npx vercel@latest` or
 
 Dependency audit currently reports five high-severity entries in the development-only Next ESLint/glob chain. npm proposes a downgrade to Next 14 tooling; this has not been applied because it conflicts with this Next 16 app. No production dependency vulnerabilities are reported. Revisit when a compatible upstream fix is available.
 
-Verified October 11, 2026: production build and lint pass. Twelve unit/API checks cover weather/date calculations, gas fallbacks, lodging, totals, validation, cache lifetimes and tile-key isolation. All seven browser checks pass, exercising desktop/mobile weather and budget interactions alongside persistence, invites, RLS, live shared settings, and real ORS routing. Live provider checks return Denver January lows near 14°F with Jun–Sep suggestions, Phoenix May lows near 67°F, current forecast data, EIA weekly prices, and proxied PNG temperature tiles. Physical phones have not been tested.
+Verified October 11, 2026: production build and lint pass. Fourteen unit/API checks cover weather/date calculations, gas fallbacks, lodging, totals, validation, cache lifetimes and tile-key isolation. All nine browser checks pass, exercising desktop/mobile weather and budget interactions alongside persistence, invites, RLS, live shared settings, and real ORS routing. Live provider checks return Denver January lows near 14°F with Jun–Sep suggestions, Phoenix May lows near 67°F, current forecast data, EIA weekly prices, and proxied PNG temperature tiles. Physical phones have not been tested.
 
 The previous Google-authenticated review preview is https://loose-girl-trip-24yqoeclp-bigolehealzs-projects.vercel.app. Its callback is allowed in Supabase and hosted Google login survives refresh. Each new preview origin needs its own Supabase callback entry before real Google login; local sign-in already works. Phase 4–5 implementation commit: `b5fd4f9` on `codex/shared-trip-routing`, pushed to GitHub. The automatic Git preview is READY: https://loose-girl-trip-ee6aoguee-bigolehealzs-projects.vercel.app. Its hosted weather, gas, and tile endpoints return real data successfully. The user approved both this preview callback and the stable branch callback in Supabase.
 
-Current review URL: https://loose-girl-trip-git-codex-shared-t-11e503-bigolehealzs-projects.vercel.app — use this alias for future updates on this branch. Google login is enabled for `/auth/confirm**` on this origin. Production promotion remains Phase 6.
+Current review URL: https://loose-girl-trip-git-codex-shared-t-11e503-bigolehealzs-projects.vercel.app — use this alias for future updates on this branch. Google login is enabled for `/auth/confirm**` on this origin. Phase 6 production release is recorded below.
+
+## Phase 6: install, plan and take it with you
+
+The [Next.js web app manifest](https://nextjs.org/docs/app/guides/progressive-web-apps), 192/512px icons, separate maskable icon, Apple touch icon and viewport metadata support home-screen installation. Open **Install app** for Safari/iPhone instructions or the browser install prompt where supported. The service worker caches only the public offline reconnect page. Trip data, authentication, API responses and map tiles are never cached by the worker; live features require connectivity.
+
+On phones, the planner is a bottom sheet above the full-screen map. Use **Show map**, **Open trip planner**, the expand button, or drag the grip to resize it. The grip also supports keyboard activation. Safe-area spacing and reduced-motion settings are respected. Map bounds account for the visible area above the sheet.
+
+Open **Monthly timeline** to see all twelve months, including cross-month/year stays and same-day visits. Navigate between years. Climate colors use each location's monthly average low against your threshold; near-term stops use the current forecast stay estimate. Pending data is gray. Tap a stay to focus the map. Departure day is excluded from lodging nights.
+
+**Export trip JSON** downloads settings and stops in the exact plan model, preserving their chosen order and zero nightly overrides. No account/session data or API credentials are included. Derived weather/routes are recalculated on import. **Import trip JSON** validates files up to 1 MB / 200 stops, then shows a preview before saving. Guests can download their current trip before confirming replacement. Signed-in imports use the existing atomic `create_trip` RPC to create a new shared trip with fresh IDs; original trips and memberships stay intact. No schema changes are required.
+
+Phase 6 validation covers file round trips, invalid/canceled imports, new shared copies, month/year/leap-day boundaries, weather colors, mobile sheet/keyboard interactions, map focus, PWA assets and offline behavior. Desktop and simulated mobile browsers are verified; physical home-screen installation has not been tested. The optional seed lodging-rate table and custom domain are deferred.
+
+Production destination: https://loose-girl-trip.vercel.app. Google callback configuration already includes this origin. Promote only after the reviewed Phase 6 build passes; production uses the configured server-only provider keys and Supabase integration. The release status will be recorded after hosted verification.

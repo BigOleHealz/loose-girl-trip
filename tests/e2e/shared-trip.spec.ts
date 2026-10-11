@@ -122,6 +122,18 @@ test('two authenticated browsers migrate, invite, edit live and share a real dri
     await b.reload();
     await expect(b.locator('.stop-card')).toHaveCount(1);
     expect(await b.evaluate(key => localStorage.getItem(key), STORAGE_KEY)).toBeNull();
+    // Import creates a fresh owner trip with fresh stop IDs, leaving the shared original intact.
+    const imported = {...local, name:'Imported shared copy', stops:[{...local.stops[0], name:'Imported Denver'}]};
+    await a.getByLabel('Import trip JSON file').setInputFiles({name:'copy.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(imported))});
+    await a.getByRole('button',{name:'Import as new shared trip',exact:true}).click();
+    await expect(a.locator('.stop-title strong')).toHaveText(['Imported Denver']);
+    const importedId=await a.evaluate(()=>localStorage.getItem('loose-girl-trip:active-cloud-trip'));
+    expect(importedId).not.toBe(tripId);
+    const importedStops=await admin.from('stops').select('id').eq('trip_id',importedId!);
+    expect(importedStops.data?.[0].id).not.toBe(local.stops[0].id);
+    const original=await admin.from('stops').select('name').eq('trip_id',tripId!);
+    expect(original.data?.map(s=>s.name)).toEqual(['Denver base camp']);
+    await expect(b.locator('.stop-title strong')).toHaveText(['Denver base camp']);
     for (const page of [a, b]) {
       const panel = page.getByRole('button', { name: 'Shared trips' });
       if (await panel.getAttribute('aria-expanded') === 'false') await panel.click();

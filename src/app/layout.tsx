@@ -1,11 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Loose Girl Trip · Take the long way",
   description: "A little less routine. A little more road. Plan your US road trip, one stop at a time.",
+  applicationName: 'Loose Girl Trip',
+  appleWebApp: { capable: true, title: 'Loose Girl Trip', statusBarStyle: 'default' },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
 };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#253b35' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body>{children}</body></html>;

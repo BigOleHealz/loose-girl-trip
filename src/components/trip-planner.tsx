@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import type { Place, Stop } from "@/lib/types";
 import { nights } from "@/lib/trip";
 import { useTrip } from "@/lib/use-trip";
@@ -16,6 +16,9 @@ import PlaceSearch from "./place-search";
 import StopEditor from "./stop-editor";
 import TripSettings from "./trip-settings";
 import AccountPanel from "./account-panel";
+import TripFiles from "./trip-files";
+import MonthlyTimeline from "./monthly-timeline";
+import InstallApp from "./install-app";
 
 const TripMap = dynamic(() => import("./trip-map"), { ssr: false, loading: () => <div className="map-loading">Unfolding the map…</div> });
 
@@ -35,7 +38,11 @@ export default function TripPlanner() {
   const [selected, setSelected] = useState<string | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [sheet, setSheet] = useState<'collapsed' | 'half' | 'expanded'>('half');
+  const sheetDrag = useRef<number | null>(null);
+  function selectStop(id: string) { setSelected(id); setSheet('collapsed'); }
   function addPlace(place: Place) {
+    setSheet('expanded');
     const arriveDate = trip.stops.at(-1)?.departDate || trip.startDate;
     setEditor({ isNew: true, tripId: trip.id, stop: { id: crypto.randomUUID(), name: place.name, lat: place.lat, lon: place.lon, state: place.state, arriveDate, departDate: arriveDate } });
   }
@@ -48,18 +55,29 @@ export default function TripPlanner() {
     if (fromId === toId) return;
     void model.moveStop(fromId, toId).then(saved => { if (saved) setAnnouncement("Stop order updated."); });
   }
-  return <main className="planner">
+  return <main className={`planner sheet-${sheet}`} style={{ '--sheet-height': sheet === 'collapsed' ? '104px' : sheet === 'expanded' ? '92dvh' : '60dvh' } as CSSProperties}>
     <aside className="sidebar" aria-label="Trip planner">
+      <div className="sheet-bar"><button className="sheet-grip" aria-label="Resize trip panel" onPointerDown={e => {sheetDrag.current = e.clientY; e.currentTarget.setPointerCapture(e.pointerId);}} onPointerUp={e => {
+        const distance = sheetDrag.current === null ? 0 : e.clientY - sheetDrag.current; sheetDrag.current = null;
+        if (Math.abs(distance) > 35) setSheet(distance < 0 ? 'expanded' : 'collapsed');
+        else setSheet(sheet === 'collapsed' ? 'half' : sheet === 'half' ? 'expanded' : 'half');
+      }} onPointerCancel={() => {sheetDrag.current = null;}} onClick={e => { if (e.detail === 0) setSheet(sheet === 'collapsed' ? 'half' : sheet === 'half' ? 'expanded' : 'half'); }}><span aria-hidden="true" /></button>
+        <button className="text-button" aria-controls="trip-panel-content" aria-expanded={sheet !== 'collapsed'} onClick={() => setSheet(sheet === 'collapsed' ? 'half' : 'collapsed')}>{sheet === 'collapsed' ? 'Open trip planner ↑' : 'Show map ↓'}</button>
+        <button className="text-button" aria-label={sheet === 'expanded' ? 'Reduce trip panel' : 'Expand trip panel'} onClick={() => setSheet(sheet === 'expanded' ? 'half' : 'expanded')}>{sheet === 'expanded' ? '↙' : '↗'}</button>
+      </div>
       <header className="brand"><div className="brand-mark" aria-hidden="true">↗</div><span>LOOSE GIRL TRIP<span className="brand-sub">LESS ROUTINE. MORE ROAD.</span></span><span className="edition">01 / THE PLAN</span></header>
-      <div className="sidebar-content">
+      <div className="sidebar-content" id="trip-panel-content">
         <div className="intro"><span className="eyebrow">YOUR NEXT CHAPTER</span><h1>Take the<br /><em>long way.</em></h1><p>A few places. A wide-open road.<br />Let’s see where this takes you.</p></div>
         {!ready ? <p className="hint">Loading your trip…</p> : <>
           <AccountPanel user={model.user} owner={model.owner} trip={trip} trips={model.trips} localTrip={model.localTrip} activeId={model.activeId} busy={busy} onSelect={model.selectTrip} onCreate={model.createTrip} />
+          <TripFiles key={trip.id} trip={trip} signedIn={Boolean(model.user)} busy={busy} onImport={async next => { const saved = await model.importTrip(next); if (saved) {setEditor(null);setSelected(null);setAnnouncement('Trip imported.');} return saved; }} />
+          <InstallApp />
           {model.error && <p className="error" role="alert">{model.error}<button className="text-button" onClick={model.clearError}>Dismiss</button></p>}
           {model.user && !model.activeId ? <p className="hint">Open Shared trips above to create a trip or upload your local plan.</p> : <>
           <TripSettings key={trip.id} trip={trip} onSave={model.saveSettings} />
           <PlaceSearch onSelect={addPlace} />
           {editor && editor.tripId === trip.id && <StopEditor key={editor.stop.id} stop={editor.stop} trip={trip} isNew={editor.isNew} onSave={saveStop} onCancel={() => setEditor(null)} />}
+          <MonthlyTimeline key={`timeline:${trip.id}`} trip={trip} weather={weather.data} onSelect={selectStop} />
           <section className="stops-section" aria-label="Your stops"><div className="stops-heading"><h2>Your stops <span>{String(trip.stops.length).padStart(2, "0")}</span></h2><button className="text-button" onClick={() => { void model.sortByDate().then(saved => { if (saved) setAnnouncement("Stops sorted by date."); }); }} disabled={!trip.stops.length || busy}>Sort by date ↓</button></div>
             <p className="hint order-hint">{manual ? "Your chosen order" : "In date order"} · drag the grip to rearrange</p>
             {!trip.stops.length && <div className="empty-stops"><span aria-hidden="true">✳</span><h3>Every trip starts somewhere.</h3><p>Search for your first stop above.<br />The rest is an open road.</p></div>}
@@ -82,7 +100,7 @@ export default function TripPlanner() {
       </div>
       <footer className="sidebar-footer"><span className={saveStatus.includes('saved to your shared trip') || saveStatus === 'Saved to your shared trip' || saveStatus === "Saved on this device" ? "save-dot" : "save-dot warning"} /><span role="status">{saveStatus}</span>{storageBlocked && !model.user && <button className="text-button" onClick={() => { if (window.confirm("Replace unreadable saved data with this trip?")) model.clearStorageBlock(); }}>Replace saved trip</button>}</footer>
     </aside>
-    <section className="map-panel" aria-label="Explore the map"><TripMap stops={mappedStops} legs={route.legs.map(leg => budget.legs.find(p => p.fromStopId === leg.fromStopId && p.toStopId === leg.toStopId) || leg)} pricedLegs={budget.legs} coldThresholdF={trip.coldThresholdF} defaultNightlyRate={trip.defaultNightlyRate} selectedId={selected} onSelect={setSelected} /><div className="map-heading"><span className="eyebrow">A LITTLE ROOM TO WANDER</span><h2>{trip.name}</h2><p>{trip.stops.length ? `${trip.stops.length} stops · ${trip.stops.reduce((sum, stop) => sum + nights(stop), 0)} nights · ${trip.travelers} travelers` : "Your story starts with the first pin."}</p></div><div className="map-note"><span aria-hidden="true">✳</span><span>MAKE ROOM FOR THE DETOURS.</span></div></section>
+    <section className="map-panel" aria-label="Explore the map"><TripMap stops={mappedStops} legs={route.legs.map(leg => budget.legs.find(p => p.fromStopId === leg.fromStopId && p.toStopId === leg.toStopId) || leg)} pricedLegs={budget.legs} coldThresholdF={trip.coldThresholdF} defaultNightlyRate={trip.defaultNightlyRate} selectedId={selected} onSelect={selectStop} sheet={sheet} /><div className="map-heading"><span className="eyebrow">A LITTLE ROOM TO WANDER</span><h2>{trip.name}</h2><p>{trip.stops.length ? `${trip.stops.length} stops · ${trip.stops.reduce((sum, stop) => sum + nights(stop), 0)} nights · ${trip.travelers} travelers` : "Your story starts with the first pin."}</p></div><div className="map-note"><span aria-hidden="true">✳</span><span>MAKE ROOM FOR THE DETOURS.</span></div></section>
     <p className="sr-only" aria-live="polite">{announcement}</p>
   </main>;
 }
