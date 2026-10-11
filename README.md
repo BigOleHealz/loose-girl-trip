@@ -22,7 +22,7 @@ The app has its own Git repository, isolated from the surrounding FOSS workspace
 
 The Vercel project `loose-girl-trip` in `bigolehealzs-projects` is linked, with Next.js, Node 22, `npm ci`, `npm run build`, and the framework-default output directory. Supabase integration variables are set automatically. The user-authorized ORS, OpenWeather and EIA keys are configured as server-side secrets for Development, Preview and Production.
 
-Vercel automatically assigned its first deployment to production at https://loose-girl-trip.vercel.app. Later CLI deployments default to preview. The first hosted build and live server geocoding passed. Auth URL/template/SMTP configuration remains necessary for real emailed sign-in links.
+Vercel automatically assigned its first deployment to production at https://loose-girl-trip.vercel.app. Later CLI deployments default to preview. The first hosted build and live server geocoding passed. The Site URL and four exact callback origins are configured in Supabase Auth. SMTP configuration and custom email templates remain necessary for real emailed sign-in links across devices.
 
 When the GitHub repository is available, push this dedicated app repository and connect it using Vercel's Git integration. Its Root Directory should be `.`. Branch pushes then create automatic previews. If intentionally added to a GitHub monorepo instead, set Root Directory to `loose-girl-trip`. `.gitignore` and `.vercelignore` exclude credentials, generated builds, local tools and test outputs; never commit `.env.local` or `env.local`.
 
@@ -48,10 +48,10 @@ A Supabase Free Plan project named `loose-girl-trip` is provisioned through the 
 
 The applied schema is `supabase/migrations/20261011185249_shared_trips_and_routes.sql`. For a new backend, run `node scripts/supabase-db.mjs push` after pulling integration variables into the ignored `.env.local`. This wrapper reads the database URL without printing it. `node scripts/supabase-db.mjs advisors` runs the security advisor. Do not replay the migration manually on the existing provisioned backend.
 
-Configure Supabase Auth before sending links to real travelers:
+Supabase Auth URL configuration is saved. Complete email delivery before sending links to real travelers:
 
-1. In Auth → URL Configuration, set the Site URL to the chosen app URL. Allow `http://localhost:3000/auth/confirm**`, `http://127.0.0.1:3107/auth/confirm**` for local verification, and the exact review/production app origins with `/auth/confirm**`. Avoid broad wildcard domains in production.
-2. For cross-device magic links, customize both the Magic Link and Confirm Signup email templates to link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`. The app supplies a callback URL containing a `next` query parameter. The callback verifies the hashed token and allows only the homepage or an invite route as the destination. Same-browser PKCE callbacks with `code` are also supported.
+1. Configured Site URL: `https://loose-girl-trip.vercel.app`. Allowed callbacks: that domain, the review preview below, `http://localhost:3000`, and `http://127.0.0.1:3107`, each with `/auth/confirm**`. A new preview origin or custom domain must be added explicitly; no wildcard Vercel domains are permitted.
+2. Supabase Free Plan requires custom SMTP before editing email templates. Once SMTP is configured, for cross-device magic links customize both the Magic Link and Confirm Signup email templates to link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`. The app supplies a callback URL containing a `next` query parameter. The callback verifies the hashed token and allows only the homepage or an invite route as the destination. Same-browser PKCE callbacks with `code` are also supported.
 3. Configure a custom SMTP service and verified sender/domain. Supabase's built-in email delivery is restricted to project-team addresses and two messages per hour. Real friend sign-in needs custom SMTP. Provider choice and domain verification remain pending.
 
 ## Verification
@@ -62,4 +62,6 @@ The installed global Vercel CLI is outdated (33.4.1). Use `npx vercel@latest` or
 
 Dependency audit currently reports five high-severity entries in the development-only Next ESLint/glob chain. npm proposes a downgrade to Next 14 tooling; this has not been applied because it conflicts with this Next 16 app. No production dependency vulnerabilities are reported. Revisit when a compatible upstream fix is available.
 
-Verified October 11, 2026: local production build, lint and seven unit/API checks pass. All five production-browser tests pass, including two different accounts, desktop/mobile viewports, local-trip migration, live edits and deletions, a real 540-mile ORS route, nonmember RLS restrictions, expired invites, and a concurrent claimed/pending route-cache lease. No routing requests occur on name/date edits. Database security advisors report no issues. This verifies the Phase 2–3 interaction criteria using temporary accounts without sending email; custom SMTP and authentication URL/template configuration are still required for actual emailed links to friends. Physical phones have not been tested.
+Verified October 11, 2026: local production build, lint and seven unit/API checks pass. All five production-browser tests pass, including two different accounts, desktop/mobile viewports, local-trip migration, live edits and deletions, a real 540-mile ORS route, nonmember RLS restrictions, expired invites, and a concurrent claimed/pending route-cache lease. No routing requests occur on name/date edits. Database security advisors report no issues. This verifies the Phase 2–3 interaction criteria using temporary accounts without sending email; custom SMTP and email-template configuration are still required for actual emailed links to friends. Physical phones have not been tested.
+
+Current review preview: https://loose-girl-trip-asnyqrctp-bigolehealzs-projects.vercel.app — READY, Node 22, hosted build and browser map loading verified (24/24 tiles). Phase 2–3 implementation commit: `a600a6f` on `codex/shared-trip-routing`. GitHub remote/push remains pending the repository URL.
