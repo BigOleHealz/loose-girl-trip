@@ -18,7 +18,7 @@ Use Node.js 22 and npm. Run `npm ci`, copy `.env.example` to `.env.local`, and s
 
 ## Vercel / GitHub setup
 
-This directory is currently inside the larger FOSS workspace's Git repository, which has no remote. Do not push that workspace to deploy this app. Put **only this app directory** in a dedicated GitHub repository, excluding `.env.local`, `node_modules`, `.next`, `.vercel`, and test outputs (covered by `.gitignore`). Alternatively, if it is intentionally added to an existing GitHub monorepo, set Vercel's Root Directory to `loose-girl-trip`.
+This app now has its own Git repository, isolated from the surrounding FOSS workspace. The initial implementation is committed on `codex/phase-0-1`; its GitHub remote still needs to be configured. Push **only this app repository**, excluding `.env.local`, `env.local`, `node_modules`, `.next`, `.vercel`, and test outputs (covered by `.gitignore`). If deployed from this dedicated repository, Vercel's Root Directory is the repository root. If intentionally added to a GitHub monorepo instead, set Root Directory to `loose-girl-trip`.
 
 1. Import the app's GitHub repository into Vercel. Select Next.js, Node.js 22.x, `npm ci` as the install command and `npm run build` as the build command. Leave the output directory on its framework default.
 2. Add `ORS_API_KEY` in Vercel Project Settings → Environment Variables for Preview and Production. Add `OPENWEATHER_API_KEY` and `EIA_API_KEY` when configuring later phases. Use the same names, without `NEXT_PUBLIC_`. Do not put key values in GitHub source.
