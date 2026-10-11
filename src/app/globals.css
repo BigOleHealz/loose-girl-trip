@@ -104,3 +104,23 @@ input::placeholder { color: #8c928c; }
   .map-note { display: none; }
   .sidebar-footer { padding: 12px 20px; }
 }
+
+select { width: 100%; padding: 10px; margin-top: 6px; background: #fffdf8; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; font: inherit; }
+.account-panel { border-top: 1px solid var(--line); margin-bottom: 0; }
+.account-content { padding-bottom: 20px; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 15px 0; }
+.account-actions button { background: #efefe4; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; font-size: 10px; }
+.migration-prompt { padding: 14px; background: #efefe4; border-radius: 6px; margin: 15px 0; font-size: 12px; }
+.route-summary { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.route-summary h2 { font: 400 24px Georgia, serif; }
+.route-total { font: 400 25px Georgia, serif; margin-bottom: 18px; }
+.route-total small, .route-summary summary small { display: block; margin-top: 5px; font: 10px Arial, sans-serif; color: var(--muted); }
+.route-summary details { padding: 12px 0; border-top: 1px solid var(--line); font-size: 11px; }
+.route-summary summary { cursor: pointer; }
+.route-summary ul { list-style: none; padding-left: 10px; font-size: 10px; }
+.route-summary li { display: flex; justify-content: space-between; padding: 4px 0; }
+.join-page { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+.join-card { max-width: 440px; width: 100%; padding: 32px; border: 1px solid var(--line); background: #fffdf8; border-radius: 8px; }
+.join-card h1 { font: 400 italic 50px Georgia, serif; color: var(--accent); }
+.join-card > p { color: var(--muted); line-height: 1.7; }
+.join-card > a { display: inline-block; color: var(--ink); margin-top: 25px; }

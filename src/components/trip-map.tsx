@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { divIcon, latLngBounds } from "leaflet";
-import { MapContainer, Marker, Popup, TileLayer, ZoomControl, useMap } from "react-leaflet";
-import type { Stop } from "@/lib/types";
+import { MapContainer, Marker, Popup, Polyline, TileLayer, ZoomControl, useMap } from "react-leaflet";
+import type { Leg, Stop } from "@/lib/types";
 import { nights } from "@/lib/trip";
 
 function View({ stops, selected }: { stops: Stop[]; selected: Stop | undefined }) {
@@ -19,11 +19,12 @@ function View({ stops, selected }: { stops: Stop[]; selected: Stop | undefined }
   return null;
 }
 
-export default function TripMap({ stops, selectedId, onSelect }: { stops: Stop[]; selectedId: string | null; onSelect: (id: string) => void }) {
+export default function TripMap({ stops, legs, selectedId, onSelect }: { stops: Stop[]; legs: Leg[]; selectedId: string | null; onSelect: (id: string) => void }) {
   return <MapContainer center={[38.5, -97.5]} zoom={4} zoomControl={false} className="trip-map" aria-label="Trip stops map">
     <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
     <ZoomControl position="bottomright" />
     <View stops={stops} selected={stops.find(s => s.id === selectedId)} />
+    {legs.map(leg => <Polyline key={`${leg.fromStopId}:${leg.toStopId}`} positions={leg.polyline.map(([lon, lat]) => [lat, lon] as [number, number])} pathOptions={{ color: '#b84b32', weight: 4, opacity: 0.8 }}><Popup>{Math.round(leg.miles)} miles · {leg.durationHrs.toFixed(1)} hours</Popup></Polyline>)}
     {stops.map((stop, index) => <Marker key={stop.id} title={stop.name} position={[stop.lat, stop.lon]} eventHandlers={{ click: () => onSelect(stop.id) }} icon={divIcon({ className: "stop-pin", html: `<span><b>${index + 1}</b></span>`, iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -35] })}>
       <Popup><strong>{stop.name}</strong><br />{stop.state}<br />{stop.arriveDate} → {stop.departDate}<br />{nights(stop)} nights</Popup>
     </Marker>)}

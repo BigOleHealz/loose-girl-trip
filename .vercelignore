@@ -1,0 +1,11 @@
+.git/
+.env*
+env.local
+!.env.example
+node_modules/
+.next/
+.agents/
+skills-lock.json
+supabase/.temp/
+test-results/
+playwright-report/
