@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({page}) => {
+ await page.route('**/api/weather?*',route=>route.fulfill({json:{source:'climate',avgHighF:70,avgLowF:55,months:Array.from({length:12},(_,i)=>({month:i+1,avgHighF:70,avgLowF:55})),coverage:'Browser fixture',partial:false}}));
+});
 const places = [
   { id: "1", name: "Denver", label: "Denver, CO, USA", lat: 39.74, lon: -104.99, state: "CO" },
   { id: "2", name: "Phoenix", label: "Phoenix, AZ, USA", lat: 33.45, lon: -112.07, state: "AZ" },
@@ -9,7 +12,7 @@ const places = [
 ];
 
 test("five dated stops survive refresh; settings, drag order, editing and deletion persist", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1400 });
+  await page.setViewportSize({ width: 1440, height: 2200 });
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   // Deterministic UI fixtures only; production search always uses the ORS route.

@@ -85,7 +85,7 @@ input::placeholder { color: #8c928c; }
 .stop-pin { background: transparent; border: 0; }
 .stop-pin span { display: grid; place-items: center; background: var(--accent); color: white; border: 2px solid var(--paper); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); width: 34px; height: 34px; box-shadow: 0 2px 6px #253b3550; font: 600 12px Arial; }
 .stop-pin b { transform: rotate(45deg); }
-.leaflet-control-zoom { border: 1px solid var(--line) !important; box-shadow: none !important; margin-right: 24px !important; margin-bottom: 35px !important; }
+.leaflet-control-zoom { border: 1px solid var(--line) !important; box-shadow: none !important; margin-right: 24px !important; margin-top: 24px !important; }
 .leaflet-control-zoom a { color: var(--ink) !important; background: var(--paper) !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 700px) {
@@ -124,3 +124,34 @@ select { width: 100%; padding: 10px; margin-top: 6px; background: #fffdf8; color
 .join-card h1 { font: 400 italic 50px Georgia, serif; color: var(--accent); }
 .join-card > p { color: var(--muted); line-height: 1.7; }
 .join-card > a { display: inline-block; color: var(--ink); margin-top: 25px; }
+
+.stop-weather { border-top: 1px solid #ecece3; padding: 10px 0; }
+.weather-values { font-size: 12px; margin: 0 0 7px; display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.weather-values strong { font-size: 9px; margin-left: auto; }
+.weather-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.weather-dot.cold, .stop-pin.cold span { background: #b84b32; }
+.weather-dot.borderline, .stop-pin.borderline span { background: #b08524; }
+.weather-dot.warm, .stop-pin.warm span { background: #477454; }
+.stop-pin.unknown span { background: #768079; }
+.warmer-months { font-size: 11px; margin: 8px 0; }
+.move-dates { font-size: 10px; text-align: left; line-height: 1.5; }
+.weather-loading { padding: 5px 0; }
+.weather-map-control { position: absolute; z-index: 600; top: 170px; right: 24px; padding: 12px; background: #faf7f0f5; border: 1px solid var(--line); border-radius: 6px; width: 230px; }
+.weather-toggle { border: 0; background: none; font-weight: 600; font-size: 11px; text-align: left; padding: 4px 0; }
+.weather-toggle[aria-pressed=true] { color: var(--accent); }
+.temperature-scale { height: 9px; border-radius: 4px; background: linear-gradient(90deg,#821692 0%,#8257db 14.3%,#208cec 28.6%,#20c4e8 42.9%,#23dddd 57.1%,#c2ff28 71.4%,#fff028 85.7%,#ffc228 92.9%,#fc8014 100%); }
+.temperature-labels { position: relative; display: flex; justify-content: space-between; font-size: 9px; padding-top: 4px; }
+.temperature-labels span:nth-child(2) { position: absolute; left: 57.1%; transform: translateX(-50%); }
+.pin-legend { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 9px; margin: 10px 0 0; }
+.budget-panel { margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.budget-panel h2 { font: 400 24px Georgia,serif; }
+.budget-panel dl > div { display:flex; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+.budget-panel dt small { display: block; color:var(--muted); font-size: 9px; margin-top: 4px; }
+.budget-panel dd { margin: 0; font-variant-numeric: tabular-nums; }
+.budget-grand { font-weight: 700; }
+.budget-remaining { background: #e7eddf; border-radius: 5px; padding: 12px; font-size: 12px; color: #315842; }
+.budget-remaining.over { background: #f3e3d7; color: #933b28; }
+.budget-panel details { font-size: 10px; margin: 15px 0; }
+.budget-panel summary { cursor: pointer; }
+.budget-panel ul { padding-left: 18px; line-height: 1.8; }
+@media(max-width:700px) { .leaflet-control-zoom { margin-top:12px !important; margin-right:12px !important; } .weather-map-control { top:auto; bottom:24px; right:12px; padding:8px; width:185px; } .weather-map-control .hint { font-size:8px; margin:6px 0; } .weather-toggle { font-size:10px; } }

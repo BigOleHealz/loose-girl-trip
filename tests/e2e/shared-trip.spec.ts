@@ -13,6 +13,10 @@ test('two authenticated browsers migrate, invite, edit live and share a real dri
   const admin = createClient(url!, adminKey!, { global: { fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(15000) }) }, auth: { persistSession: false, autoRefreshToken: false } });
   const users: string[] = [];
   const contexts = [await browser.newContext({ baseURL: 'http://127.0.0.1:3107', viewport: { width: 1440, height: 1200 } }), await browser.newContext({ baseURL: 'http://127.0.0.1:3107', viewport: { width: 390, height: 844 } })];
+  for (const context of contexts) {
+    await context.route('**/api/weather?*',route=>route.fulfill({json:{source:'climate',avgHighF:75,avgLowF:55,months:Array.from({length:12},(_,i)=>({month:i+1,avgHighF:75,avgLowF:55})),coverage:'Browser fixture',partial:false}}));
+    await context.route('**/api/gas',route=>route.fulfill({json:{period:'2026-10-05',prices:{NUS:{price:4,period:'2026-10-05',area:'U.S.'},SCO:{price:3,period:'2026-10-05',area:'Colorado'},R20:{price:2,period:'2026-10-05',area:'PADD 2'}}}}));
+  }
   let outsider: typeof admin | null = null;
   async function identity(index: number) {
     const email = `loose-trip-check-${Date.now()}-${index}@example.com`;
@@ -61,6 +65,15 @@ test('two authenticated browsers migrate, invite, edit live and share a real dri
     let routeRequests = 0;
     a.on('request', req => { if (req.url().endsWith('/api/route')) routeRequests++; });
     b.on('request', req => { if (req.url().endsWith('/api/route')) routeRequests++; });
+    const budgetA=a.getByRole('region',{name:'Trip budget'}), budgetB=b.getByRole('region',{name:'Trip budget'});
+    await expect(budgetA).toContainText('Grand total');await expect(budgetB).toContainText('Grand total');
+    const originalGas=Number((await budgetA.locator('dd').first().innerText()).replace(/[^0-9.]/g,''));
+    expect(originalGas).toBeGreaterThan(40);
+    await a.getByRole('button',{name:'Trip settings',exact:true}).click();
+    await a.getByLabel('Vehicle MPG').fill('56');await a.getByLabel('Default nightly rate ($)').fill('60');await a.getByLabel('Travelers',{exact:true}).fill('3');
+    await a.getByRole('button',{name:'Save settings',exact:true}).click();
+    await expect.poll(async()=>Number((await budgetB.locator('dd').first().innerText()).replace(/[^0-9.]/g,''))).toBeCloseTo(originalGas/2,1);
+    await expect(budgetB).toContainText('$420.00');await expect(budgetB).toContainText('3 travelers');
     await a.getByRole('button', { name: 'Edit Denver', exact: true }).click();
     await a.getByLabel('Stop name').fill('Denver base camp');
     await a.getByLabel('Depart', { exact: true }).fill('2027-06-04');
@@ -70,6 +83,7 @@ test('two authenticated browsers migrate, invite, edit live and share a real dri
     await b.getByLabel('Stop name').fill('Topeka hideaway');
     await b.getByRole('button', { name: 'Save stop', exact: true }).click();
     await expect(a.locator('.stop-title strong').last()).toHaveText('Topeka hideaway', { timeout: 15000 });
+    await expect(budgetB).toContainText('$360.00');
     expect(routeRequests).toBe(0); // Date/name edits reuse the coordinate-keyed route.
 
     const tripId = await a.evaluate(() => localStorage.getItem('loose-girl-trip:active-cloud-trip'));

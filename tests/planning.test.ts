@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { EMPTY_TRIP } from '../src/lib/trip';
+import { budgetTotals, gasPriceFor, pricedLeg, STATE_TO_PADD } from '../src/lib/budget';
+import { climateStay, monthLabel, warmerStay, stopWeather, weatherTone } from '../src/lib/weather';
+import type { Leg, Stop } from '../src/lib/types';
+const stop: Stop = {id:'a',name:'Denver',state:'CO',lat:39.74,lon:-104.99,arriveDate:'2027-01-30',departDate:'2027-02-02'};
+const months = Array.from({length:12},(_,i)=>({month:i+1,avgHighF:i < 3 ? 40 : 80,avgLowF:i < 3 ? 20 : 55}));
+const price = (value:number) => ({price:value,period:'2026-10-05',area:'test'});
+const prices = {period:'2026-10-05',prices:{NUS:price(4),R40:price(5),SCO:price(3),R20:price(2)}};
+const leg: Leg = {fromStopId:'a',toStopId:'b',miles:140,durationHrs:2,polyline:[],milesByState:{Colorado:70,Kansas:56,'Outside mapped states':14},gasCost:0};
+test('gas uses real state labels, PADD and national fallback; MPG changes recalculate',()=>{
+ assert.equal(Object.keys(STATE_TO_PADD).length,51);
+ assert.equal(gasPriceFor('Colorado',prices)?.price,3);
+ assert.equal(gasPriceFor('CO',prices)?.price,3);
+ assert.equal(gasPriceFor('Wyoming',prices)?.price,5);
+ assert.equal(gasPriceFor('Kansas',prices)?.price,2);
+ assert.equal(gasPriceFor('Outside mapped states',prices)?.price,4);
+ assert.equal(pricedLeg(leg,28,prices)?.gasCost,13.5);
+ assert.equal(pricedLeg(leg,14,prices)?.gasCost,27);
+});
+test('budget handles zero rates, departure exclusion, partial routes and per-person totals',()=>{
+ const trip={...EMPTY_TRIP,travelers:2,vehicleMpg:28,budgetTotal:500,stops:[stop,{...stop,id:'b',nightlyRate:0}]};
+ const totals=budgetTotals(trip,[leg],prices);
+ assert.equal(totals.lodging,270); assert.equal(totals.gas,13.5);
+ assert.equal(totals.total,283.5);assert.equal(totals.perPerson,141.75);assert.equal(totals.remaining,216.5);assert.equal(totals.gasComplete,true);
+ assert.equal(budgetTotals(trip,[],prices).gasComplete,false);
+ assert.equal(budgetTotals({...trip,stops:[{...stop,departDate:stop.arriveDate}]},[],null).total,0);
+ assert.equal(budgetTotals({...trip,budgetTotal:100},[leg],prices).remaining,-183.5);
+});
+test('weather weights cross-month nights and preserves duration in warmer bounded stays',()=>{
+ const daily=months.map(m=>({...m,avgLowF:m.month===2?50:20}));
+ assert.equal(climateStay(daily,stop.arriveDate,stop.departDate).avgLowF,30);
+ assert.equal(climateStay(daily,'2027-02-02','2027-02-02').avgLowF,50);
+ const suggestion=warmerStay(stop,months,{startDate:'2027-01-01',endDate:'2027-12-31',coldThresholdF:45},'2026-10-11');
+ assert.deepEqual(suggestion,{arriveDate:'2027-04-30',departDate:'2027-05-03'});
+ assert.equal(warmerStay(stop,months,{startDate:'2027-01-01',endDate:'2027-02-28',coldThresholdF:45},'2026-10-11'),null);
+ const result=stopWeather({source:'climate',avgHighF:40,avgLowF:20,months,coverage:'test',partial:false},45);
+ assert.equal(result.isCold,true);assert.equal(monthLabel(result.bestMonths!), 'Apr–Dec');
+ assert.equal(weatherTone({...result,avgLowF:45},45),'borderline');
+ assert.equal(weatherTone({...result,avgLowF:50},45),'warm');
+});

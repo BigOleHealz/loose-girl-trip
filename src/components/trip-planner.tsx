@@ -6,6 +6,12 @@ import type { Place, Stop } from "@/lib/types";
 import { nights } from "@/lib/trip";
 import { useTrip } from "@/lib/use-trip";
 import { useRoutes } from "@/lib/use-routes";
+import { useWeather } from '@/lib/use-weather';
+import { useGas } from '@/lib/use-gas';
+import { budgetTotals } from '@/lib/budget';
+import { stopWeather } from '@/lib/weather';
+import StopWeather from './stop-weather';
+import BudgetPanel from './budget-panel';
 import PlaceSearch from "./place-search";
 import StopEditor from "./stop-editor";
 import TripSettings from "./trip-settings";
@@ -21,6 +27,10 @@ export default function TripPlanner() {
   const model = useTrip();
   const { trip, ready, manual, saveStatus, storageBlocked, busy } = model;
   const route = useRoutes(trip, model.user ? model.activeId : null);
+  const weather = useWeather(trip);
+  const gas = useGas(Boolean(model.user && model.activeId && trip.stops.length > 1));
+  const budget = budgetTotals(trip, route.legs, gas.prices);
+  const mappedStops = trip.stops.map(stop => ({ ...stop, weather: weather.data[stop.id] ? stopWeather(weather.data[stop.id],trip.coldThresholdF) : undefined }));
   const [editor, setEditor] = useState<{ stop: Stop; isNew: boolean; tripId: string } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
@@ -56,9 +66,11 @@ export default function TripPlanner() {
             <ol className="stop-list">{trip.stops.map((stop, index) => <li key={stop.id} className={`stop-card ${selected === stop.id ? "selected" : ""}`} data-stop-id={stop.id} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const from = e.dataTransfer.getData("text/plain") || dragged; if (from) move(from, stop.id); setDragged(null); }}>
               <div className="stop-card-top"><button type="button" className="drag-handle" draggable onDragStart={e => { e.dataTransfer.setData("text/plain", stop.id); e.dataTransfer.effectAllowed = "move"; setDragged(stop.id); }} onDragEnd={() => setDragged(null)} aria-label={`Drag ${stop.name} to reorder`} title="Drag to reorder">⠿</button><span className="stop-number">{String(index + 1).padStart(2, "0")}</span><button className="stop-title" onClick={() => setSelected(stop.id)}><strong>{stop.name}</strong><small>{stop.state || "United States"}</small></button><span className="nights">{nights(stop)}<small>nights</small></span></div>
               <div className="stop-dates">{dateLabel(stop.arriveDate)}<span aria-hidden="true">→</span>{dateLabel(stop.departDate)}<small>{stop.arriveDate.slice(0, 4)}{stop.departDate.slice(0, 4) !== stop.arriveDate.slice(0, 4) ? `–${stop.departDate.slice(0, 4)}` : ""}</small></div>
+              <StopWeather stop={stop} trip={trip} data={weather.data[stop.id]} error={weather.errors[stop.id]} busy={busy} onRetry={weather.retry} onMove={next => { void model.saveStop(next,false).then(saved => { if (saved) setAnnouncement(`${stop.name} moved to warmer dates.`); }); }} />
               <div className="stop-actions"><button disabled={index === 0 || busy} aria-label={`Move ${stop.name} up`} onClick={() => move(stop.id, trip.stops[index - 1].id)}>↑</button><button disabled={index === trip.stops.length - 1 || busy} aria-label={`Move ${stop.name} down`} onClick={() => move(stop.id, trip.stops[index + 1].id)}>↓</button><span /><button disabled={busy} onClick={() => { setEditor({ stop, isNew: false, tripId: trip.id }); setSelected(stop.id); }}>Edit<span className="sr-only"> {stop.name}</span></button><button disabled={busy} onClick={() => { void model.deleteStop(stop.id).then(saved => { if (!saved) return; if (editor?.stop.id === stop.id) setEditor(null); if (selected === stop.id) setSelected(null); setAnnouncement(`${stop.name} deleted.`); }); }}>Delete<span className="sr-only"> {stop.name}</span></button></div>
             </li>)}</ol>
           </section>
+          <BudgetPanel trip={trip} budget={budget} prices={gas.prices} error={gas.error} onRetry={gas.retry} />
           {trip.stops.length >= 2 && <section className="route-summary" aria-label="Driving route"><h2>The road between</h2>{!model.user ? <p className="hint">Sign in and upload this trip to calculate driving routes.</p> : <>
             <p className="route-total">{route.loading ? 'Finding the road…' : `${Math.round(route.legs.reduce((sum, leg) => sum + leg.miles, 0)).toLocaleString()} miles`}<small>{route.legs.length} of {trip.stops.length - 1} legs calculated</small></p>
             {route.error && <p className="error" role="alert">{route.error}<button className="text-button" onClick={route.retry}>Retry routes</button></p>}
@@ -70,7 +82,7 @@ export default function TripPlanner() {
       </div>
       <footer className="sidebar-footer"><span className={saveStatus.includes('saved to your shared trip') || saveStatus === 'Saved to your shared trip' || saveStatus === "Saved on this device" ? "save-dot" : "save-dot warning"} /><span role="status">{saveStatus}</span>{storageBlocked && !model.user && <button className="text-button" onClick={() => { if (window.confirm("Replace unreadable saved data with this trip?")) model.clearStorageBlock(); }}>Replace saved trip</button>}</footer>
     </aside>
-    <section className="map-panel" aria-label="Explore the map"><TripMap stops={trip.stops} legs={route.legs} selectedId={selected} onSelect={setSelected} /><div className="map-heading"><span className="eyebrow">A LITTLE ROOM TO WANDER</span><h2>{trip.name}</h2><p>{trip.stops.length ? `${trip.stops.length} stops · ${trip.stops.reduce((sum, stop) => sum + nights(stop), 0)} nights · ${trip.travelers} travelers` : "Your story starts with the first pin."}</p></div><div className="map-note"><span aria-hidden="true">✳</span><span>MAKE ROOM FOR THE DETOURS.</span></div></section>
+    <section className="map-panel" aria-label="Explore the map"><TripMap stops={mappedStops} legs={route.legs.map(leg => budget.legs.find(p => p.fromStopId === leg.fromStopId && p.toStopId === leg.toStopId) || leg)} pricedLegs={budget.legs} coldThresholdF={trip.coldThresholdF} defaultNightlyRate={trip.defaultNightlyRate} selectedId={selected} onSelect={setSelected} /><div className="map-heading"><span className="eyebrow">A LITTLE ROOM TO WANDER</span><h2>{trip.name}</h2><p>{trip.stops.length ? `${trip.stops.length} stops · ${trip.stops.reduce((sum, stop) => sum + nights(stop), 0)} nights · ${trip.travelers} travelers` : "Your story starts with the first pin."}</p></div><div className="map-note"><span aria-hidden="true">✳</span><span>MAKE ROOM FOR THE DETOURS.</span></div></section>
     <p className="sr-only" aria-live="polite">{announcement}</p>
   </main>;
 }
