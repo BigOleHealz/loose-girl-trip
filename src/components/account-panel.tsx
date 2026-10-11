@@ -17,16 +17,14 @@ export default function AccountPanel({ user, owner, trip, trips, localTrip, acti
   return <section className="account-panel">
     <button className="section-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><span>{user ? '☷ Shared trips' : '↗ Plan together'}</span><span>{open ? '−' : '+'}</span></button>
     {open && <div className="account-content">
-      {!configured ? <p className="hint">Shared trips require the Supabase project connection.</p> : !user ? <form onSubmit={async e => {
-        e.preventDefault(); setPending(true); setMessage('');
-        const email = String(new FormData(e.currentTarget).get('email')).trim();
+      {!configured ? <p className="hint">Shared trips require the Supabase project connection.</p> : !user ? <div><p className="hint">Use your Google account to share your trip and see each other’s edits live.</p><button className="primary-button" disabled={pending} onClick={async () => {
+        setPending(true); setMessage('');
         try {
           const callback = new URL('/auth/confirm', window.location.origin); callback.searchParams.set('next', next);
-          const { error } = await createClient().auth.signInWithOtp({ email, options: { emailRedirectTo: callback.toString() } });
-          setMessage(error ? 'Could not send the sign-in link. Check the email and try again shortly.' : 'Check your email for your sign-in link.');
-        } catch { setMessage('Could not connect. Please try again.'); }
-        finally { setPending(false); }
-      }}><p className="hint">Sign in with an email link to share your trip and see each other’s edits live.</p><label>Email address<input name="email" type="email" required autoComplete="email" /></label><button className="primary-button" disabled={pending}>{pending ? 'Sending…' : 'Email me a sign-in link'}<span>↗</span></button></form> : <>
+          const { error } = await createClient().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: callback.toString(), queryParams: { prompt: 'select_account' } } });
+          if (error) { setMessage('Could not start Google sign-in. Please try again.'); setPending(false); }
+        } catch { setMessage('Could not connect to Google sign-in. Please try again.'); setPending(false); }
+      }}>{pending ? 'Opening Google…' : 'Continue with Google'}<span>↗</span></button></div> : <>
         <p className="hint">Signed in as {user.email}</p>
         {trips.length > 0 && <label>Open trip<select value={activeId || ''} disabled={busy} onChange={e => { setInvite(null); void onSelect(e.target.value); }}>{trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
         {localTrip && <div className="migration-prompt"><strong>Your local trip is ready to come along.</strong><p className="hint">Upload “{localTrip.name}” with {localTrip.stops.length} stops to share it. The local copy is removed only after upload succeeds.</p><button className="primary-button" disabled={busy} onClick={() => { void onCreate(true); }}>Upload my local trip ↗</button></div>}

@@ -94,7 +94,7 @@ Leg {
 - **Done when:** you can add 5 stops with dates, refresh the page, and they're still there.
 
 ### Phase 2: Accounts and shared trip (Supabase)
-- **Auth:** sign in with an email magic link, so there are no passwords to type on a phone.
+- **Auth:** sign in with Google (user decision, October 11, 2026), so there are no app passwords or SMTP provider to configure. This replaces the original email magic-link choice.
 - **Tables:**
   - `trips`: trip settings from the data model, plus `owner_id`
   - `trip_members` (`trip_id`, `user_id`, `role`)

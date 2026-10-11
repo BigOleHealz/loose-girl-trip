@@ -18,13 +18,13 @@ Use Node.js 22 and npm. Run `npm ci`, copy `.env.example` to `.env.local`, and s
 
 ## Vercel / GitHub setup
 
-The app has its own Git repository, isolated from the surrounding FOSS workspace. Phase 0–1 is committed on `codex/phase-0-1`. The GitHub destination is still awaiting the user's repository URL, so Git pushes and automatic Git deployments remain pending.
+The app has its own Git repository, isolated from the surrounding FOSS workspace. The Phase 0–3 commits are pushed to [BigOleHealz/loose-girl-trip](https://github.com/BigOleHealz/loose-girl-trip) on `codex/shared-trip-routing`. Vercel Git integration is awaiting GitHub authorization; automatic Git deployments are not connected yet.
 
 The Vercel project `loose-girl-trip` in `bigolehealzs-projects` is linked, with Next.js, Node 22, `npm ci`, `npm run build`, and the framework-default output directory. Supabase integration variables are set automatically. The user-authorized ORS, OpenWeather and EIA keys are configured as server-side secrets for Development, Preview and Production.
 
-Vercel automatically assigned its first deployment to production at https://loose-girl-trip.vercel.app. Later CLI deployments default to preview. The first hosted build and live server geocoding passed. The Site URL and four exact callback origins are configured in Supabase Auth. SMTP configuration and custom email templates remain necessary for real emailed sign-in links across devices.
+Vercel automatically assigned its first deployment to production at https://loose-girl-trip.vercel.app. Later CLI deployments default to preview. The first hosted build and live server geocoding passed. The Site URL and four exact callback origins are configured in Supabase Auth. The user chose Google sign-in instead of email magic links; SMTP is not needed. Google provider configuration is still pending.
 
-When the GitHub repository is available, push this dedicated app repository and connect it using Vercel's Git integration. Its Root Directory should be `.`. Branch pushes then create automatic previews. If intentionally added to a GitHub monorepo instead, set Root Directory to `loose-girl-trip`. `.gitignore` and `.vercelignore` exclude credentials, generated builds, local tools and test outputs; never commit `.env.local` or `env.local`.
+Complete GitHub authorization and connect this dedicated app repository using Vercel's Git integration. Its Root Directory should be `.`. Branch pushes then create automatic previews. If intentionally added to a GitHub monorepo instead, set Root Directory to `loose-girl-trip`. `.gitignore` and `.vercelignore` exclude credentials, generated builds, local tools and test outputs; never commit `.env.local` or `env.local`.
 
 ## Server/client boundaries
 
@@ -36,7 +36,7 @@ Future EIA/climate/forecast handlers must use fetch revalidation of 24 hours/30 
 
 ## Accounts, shared trips and routes
 
-Guests keep Phase 1 trips on their device. Sign in from **Plan together** using an email link. On first sign-in, **Upload my local trip** moves that trip into Supabase atomically and removes the local copy only after a successful upload. Signed-in trip data stays in Supabase; localStorage stores only the active trip ID. **New shared trip** starts a separate trip.
+Guests keep Phase 1 trips on their device. Sign in from **Plan together** using **Continue with Google**. On first sign-in, **Upload my local trip** moves that trip into Supabase atomically and removes the local copy only after a successful upload. Signed-in trip data stays in Supabase; localStorage stores only the active trip ID. **New shared trip** starts a separate trip.
 
 The owner creates an invite valid for seven days. Anyone holding that link can sign in and join as an editor. Both travelers can edit settings and stops; Realtime updates the open trip without a refresh. Updates write a single stop row, so concurrent edits to different stops do not overwrite each other. The last saved edit to the same stop wins. Shared stops and settings are recovered on refresh.
 
@@ -48,11 +48,12 @@ A Supabase Free Plan project named `loose-girl-trip` is provisioned through the 
 
 The applied schema is `supabase/migrations/20261011185249_shared_trips_and_routes.sql`. For a new backend, run `node scripts/supabase-db.mjs push` after pulling integration variables into the ignored `.env.local`. This wrapper reads the database URL without printing it. `node scripts/supabase-db.mjs advisors` runs the security advisor. Do not replay the migration manually on the existing provisioned backend.
 
-Supabase Auth URL configuration is saved. Complete email delivery before sending links to real travelers:
+Supabase Auth URL configuration is saved. Google sign-in replaces the original magic-link choice at the user's request; no SMTP provider is needed.
 
-1. Configured Site URL: `https://loose-girl-trip.vercel.app`. Allowed callbacks: that domain, the review preview below, `http://localhost:3000`, and `http://127.0.0.1:3107`, each with `/auth/confirm**`. A new preview origin or custom domain must be added explicitly; no wildcard Vercel domains are permitted.
-2. Supabase Free Plan requires custom SMTP before editing email templates. Once SMTP is configured, for cross-device magic links customize both the Magic Link and Confirm Signup email templates to link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`. The app supplies a callback URL containing a `next` query parameter. The callback verifies the hashed token and allows only the homepage or an invite route as the destination. Same-browser PKCE callbacks with `code` are also supported.
-3. Configure a custom SMTP service and verified sender/domain. Supabase's built-in email delivery is restricted to project-team addresses and two messages per hour. Real friend sign-in needs custom SMTP. Provider choice and domain verification remain pending.
+1. Configured Site URL: `https://loose-girl-trip.vercel.app`. Allowed callbacks: that domain, the review preview below, `http://localhost:3000`, and `http://127.0.0.1:3107`, each with `/auth/confirm**`. Add each new review origin explicitly.
+2. Google Cloud project `loose-girl-trip` has been created without billing. Its Google Auth branding setup is awaiting explicit approval of Google's User Data Policy. Afterward create a Web OAuth client with redirect URI `https://ktkpyttypxnyzjevgtoa.supabase.co/auth/v1/callback` and basic identity scopes (openid, email, profile).
+3. Enable the Google provider in Supabase Auth with that client ID and secret. Keep the secret in Supabase's provider configuration, never frontend code or Git. Until the provider is enabled, the Google button cannot complete a real login.
+4. The app uses PKCE and returns through `/auth/confirm`; invite destinations survive the redirect. The callback allows only the homepage or an invite route. Legacy hashed-token support remains for disposable-account verification without sending mail.
 
 ## Verification
 
@@ -62,6 +63,6 @@ The installed global Vercel CLI is outdated (33.4.1). Use `npx vercel@latest` or
 
 Dependency audit currently reports five high-severity entries in the development-only Next ESLint/glob chain. npm proposes a downgrade to Next 14 tooling; this has not been applied because it conflicts with this Next 16 app. No production dependency vulnerabilities are reported. Revisit when a compatible upstream fix is available.
 
-Verified October 11, 2026: local production build, lint and seven unit/API checks pass. All five production-browser tests pass, including two different accounts, desktop/mobile viewports, local-trip migration, live edits and deletions, a real 540-mile ORS route, nonmember RLS restrictions, expired invites, and a concurrent claimed/pending route-cache lease. No routing requests occur on name/date edits. Database security advisors report no issues. This verifies the Phase 2–3 interaction criteria using temporary accounts without sending email; custom SMTP and email-template configuration are still required for actual emailed links to friends. Physical phones have not been tested.
+Verified October 11, 2026: local production build, lint and seven unit/API checks pass. All six production-browser tests pass, including two different accounts, desktop/mobile viewports, local-trip migration, live edits and deletions, a real 540-mile ORS route, nonmember RLS restrictions, expired invites, and a concurrent claimed/pending route-cache lease. No routing requests occur on name/date edits. Database security advisors report no issues. This verifies the Phase 2–3 interaction criteria using temporary accounts without sending email; the Google PKCE redirect is tested, but a real Google account login remains pending provider setup. Physical phones have not been tested.
 
-Current review preview: https://loose-girl-trip-asnyqrctp-bigolehealzs-projects.vercel.app — READY, Node 22, hosted build and browser map loading verified (24/24 tiles). Phase 2–3 implementation commit: `a600a6f` on `codex/shared-trip-routing`. GitHub remote/push remains pending the repository URL.
+Current review preview: https://loose-girl-trip-asnyqrctp-bigolehealzs-projects.vercel.app — READY, Node 22, hosted build and browser map loading verified (24/24 tiles). Phase 2–3 implementation commit: `a600a6f` on `codex/shared-trip-routing`. GitHub push is complete; Vercel Git authorization remains pending. The preview still contains the previous email sign-in UI until the Google changes are deployed.
