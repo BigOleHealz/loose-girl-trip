@@ -206,7 +206,7 @@ select { width: 100%; padding: 10px; margin-top: 6px; background: var(--surface)
 }
 @media(prefers-reduced-motion:reduce) { .sidebar { transition: none; } }
 
-/* Dark surfaces stay separate from the live weather tile palette. */
+/* Dark controls sit above the original map and live weather tiles. */
 body { background: #0b131a; }
 ::selection { background: #efa77740; color: #fff4eb; }
 .sidebar { background: linear-gradient(160deg, #16222c 0%, var(--paper) 45%); }
@@ -225,8 +225,7 @@ input[type=date]::-webkit-calendar-picker-indicator { opacity: .8; }
 .account-actions button:hover { border-color: #516674; }
 .map-heading, .weather-map-control { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-radius: 10px; }
 .map-note { border: 1px solid var(--line); background: var(--glass); }
-.leaflet-container { background: #0b131a; }
-.base-map-tiles { filter: invert(1) hue-rotate(180deg) brightness(.78) saturate(.45) contrast(.96); }
+.leaflet-container { background: #e9ece0; }
 .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface-raised); color: var(--ink); }
 .leaflet-popup-content-wrapper { border: 1px solid #405461; box-shadow: 0 12px 32px #00000060; }
 .leaflet-container a.leaflet-popup-close-button { color: var(--muted); }
