@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js';
 import { createClient, configured } from '@/lib/supabase/client';
 import type { TripRow } from '@/lib/cloud-trip';
 import type { Trip } from '@/lib/types';
+import { travelerInviteUrl } from '@/lib/app-url';
 
 export default function AccountPanel({ user, owner, trip, trips, localTrip, activeId, busy, onSelect, onCreate, next = '/' }: {
   user: User | null; owner: boolean; trip: Trip; trips: TripRow[]; localTrip: Trip | null; activeId: string | null; busy: boolean;
@@ -33,7 +34,7 @@ export default function AccountPanel({ user, owner, trip, trips, localTrip, acti
           try {
             const { data, error } = await createClient().from('invites').insert({ trip_id: trip.id }).select('code').single();
             if (error || !data) { setMessage('Could not create an invite. Please retry.'); return; }
-            setInvite({ tripId: trip.id, url: new URL(`/join/${data.code}`, window.location.origin).toString() });
+            setInvite({ tripId: trip.id, url: travelerInviteUrl(data.code, window.location.origin) });
           } catch { setMessage('Could not connect. Please retry.'); }
           finally { setPending(false); }
         }}>Invite a traveler</button>}<button disabled={busy} onClick={async () => { const { error } = await createClient().auth.signOut(); if (error) setMessage('Could not sign out. Please retry.'); }}>Sign out</button></div>
