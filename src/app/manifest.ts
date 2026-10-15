@@ -3,7 +3,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/', name: 'Loose Girl Trip', short_name: 'Loose Girl Trip',
     description: 'Plan a warmer road trip, together and on budget.',
-    start_url: '/', scope: '/', display: 'standalone', background_color: '#faf7f0', theme_color: '#253b35',
+    start_url: '/', scope: '/', display: 'standalone', background_color: '#10181e', theme_color: '#10181e',
     icons: [
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

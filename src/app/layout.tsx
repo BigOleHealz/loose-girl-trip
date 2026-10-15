@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: 'Loose Girl Trip', statusBarStyle: 'default' },
   icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
 };
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#253b35' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#10181e', colorScheme: 'dark' };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body>{children}</body></html>;

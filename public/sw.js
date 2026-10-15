@@ -1,5 +1,5 @@
 /* Only a public offline page is cached. Trips, auth, API responses and tiles stay on the network. */
-const OFFLINE_CACHE = 'loose-girl-trip-offline-v1';
+const OFFLINE_CACHE = 'loose-girl-trip-offline-v2';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(OFFLINE_CACHE).then(cache => cache.add('/offline.html')).then(() => self.skipWaiting()));
 });

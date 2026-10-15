@@ -31,7 +31,7 @@ export default function TripMap({ stops, legs, pricedLegs, coldThresholdF, defau
   const [temperature,setTemperature] = useState(false);
   const [tileError,setTileError] = useState(false);
   return <MapContainer center={[38.5, -97.5]} zoom={4} zoomControl={false} className="trip-map" aria-label="Trip stops map">
-    <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <TileLayer className="base-map-tiles" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
     {temperature && <TileLayer url="/api/tiles/temp_new/{z}/{x}/{y}" attribution='<a href="https://openweathermap.org/">OpenWeather</a>' opacity={0.65} maxNativeZoom={10} eventHandlers={{ tileerror: () => setTileError(true) }} />}
     <div className="weather-map-control" onClick={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
       <button className="weather-toggle" aria-pressed={temperature} onClick={() => {setTemperature(!temperature);setTileError(false);}}>Temperature overlay {temperature ? 'on' : 'off'}</button>
@@ -40,7 +40,7 @@ export default function TripMap({ stops, legs, pricedLegs, coldThresholdF, defau
     </div>
     <ZoomControl position="topright" />
     <View stops={stops} selected={stops.find(s => s.id === selectedId)} sheet={sheet} />
-    {legs.map(leg => <Polyline key={`${leg.fromStopId}:${leg.toStopId}`} positions={leg.polyline.map(([lon, lat]) => [lat, lon] as [number, number])} pathOptions={{ color: '#b84b32', weight: 4, opacity: 0.8 }}><Popup>{Math.round(leg.miles)} miles · {leg.durationHrs.toFixed(1)} hours</Popup></Polyline>)}
+    {legs.map(leg => <Polyline key={`${leg.fromStopId}:${leg.toStopId}`} positions={leg.polyline.map(([lon, lat]) => [lat, lon] as [number, number])} pathOptions={{ color: '#efa777', weight: 4, opacity: 0.8 }}><Popup>{Math.round(leg.miles)} miles · {leg.durationHrs.toFixed(1)} hours</Popup></Polyline>)}
     {stops.map((stop, index) => <Marker key={stop.id} title={stop.name} position={[stop.lat, stop.lon]} eventHandlers={{ click: () => onSelect(stop.id) }} icon={divIcon({ className: `stop-pin ${weatherTone(stop.weather,coldThresholdF)}`, html: `<span><b>${index + 1}</b></span>`, iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -35] })}>
       <Popup><strong>{stop.name}</strong><br />{stop.state}<br />{stop.arriveDate} → {stop.departDate}<br />{nights(stop)} nights · Lodging {money(lodgingCost(stop,defaultNightlyRate))}<br />
         {stop.weather ? <>{stop.weather.source === 'climate' ? 'Climate averages' : 'Forecast'}: {Math.round(stop.weather.avgHighF)}° / {Math.round(stop.weather.avgLowF)}°F<br /></> : <>Weather pending<br /></>}
